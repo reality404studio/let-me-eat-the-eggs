@@ -66,6 +66,12 @@ The virtual clock advances on its own (1 virtual hour per 4 real seconds) once a
 
 Beside the agent's phone sits a live ladder of the agent's eight capabilities, each a ring that is **green when executable right now and red when it is not**. During playback it fills in — 4 available at 08:00, 5 once `check_policy` names the seller an authority holder, 6 when the deadline crosses the 2h line, 7 once the seller's confirmation exists.
 
+Above the ladder, an **availability timeline** runs 08:00 to 18:00 with one lane per gated capability — locked in red, hatched amber where it will open later, green once open — and a playhead sweeping across all lanes at the shared clock time. It shows the *future*, so at 13:00 you can already see where the day turns.
+
+Two lanes never turn green: `resolve_case` and `pay_seller` read `no clock opens this — evidence only`. Set against `seller_call`, whose green edge does slide into place, the split makes the distinction plain — some gates time opens, some gates no amount of waiting ever opens.
+
+The boundary is not drawn from a schedule. `earliestUnlock()` evaluates the real requirement functions at hypothetical clock times, which is why `seller_call` reads `never` until 15:00 and then snaps to `earliest 16:00` the moment the text is on record. Time and evidence visibly move it together.
+
 Nothing unlocks quietly. Every open gate lists, in small type, the record that opened it:
 
 ```

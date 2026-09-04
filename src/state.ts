@@ -84,6 +84,8 @@ export type EggCase = {
   policyConflict: boolean;
   /** true once check_policy has disclosed seller as an authority holder */
   authorityHoldersDisclosed: string[];
+  /** when check_policy disclosed them -- lets the timeline probe past times honestly */
+  authorityDisclosedAt: number | null;
   resolution: null | "keep" | "return" | "discard";
   inferenceRefusedAt: number | null;
   /** The capability most recently refused, so the diagram can flag it. */
@@ -123,6 +125,7 @@ export function initialCase(): EggCase {
     attemptedChannels: [],
     policyConflict: false,
     authorityHoldersDisclosed: [],
+    authorityDisclosedAt: null,
     resolution: null,
     inferenceRefusedAt: null,
     lastDenied: null,

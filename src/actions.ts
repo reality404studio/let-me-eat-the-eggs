@@ -148,6 +148,7 @@ export function checkPolicy() {
 
   s.policyConflict = true;
   s.authorityHoldersDisclosed = ["support_agent", "seller"];
+  s.authorityDisclosedAt = s.virtualTime;
   s.agentState = "routing";
 
   pushCard({

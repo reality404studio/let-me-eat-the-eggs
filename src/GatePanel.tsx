@@ -1,5 +1,6 @@
 import { hhmm, type EggCase } from "./state";
 import { evaluateGates, type Gate, type Req } from "./gates";
+import Timeline from "./Timeline";
 
 const GROUPS: { key: Gate["group"]; title: string; note: string }[] = [
   { key: "read", title: "READ", note: "no authority needed" },
@@ -63,6 +64,8 @@ export default function GatePanel({ s }: { s: EggCase }) {
           <b>{open}</b> / {gates.length} available
         </div>
       </div>
+
+      <Timeline s={s} />
 
       <div className="gp-legend">
         <span><i className="sw open" /> executable now</span>

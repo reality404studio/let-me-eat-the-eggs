@@ -26,7 +26,7 @@ export type Gate = {
  * diagram and the enforcement path must agree on the rule -- both call this.
  */
 export function textUnanswered(s: EggCase): { sent: boolean; silentFor: number; unanswered: boolean } {
-  const text = s.attemptedChannels.find((a) => a.channel === "seller_text");
+  const text = s.attemptedChannels.find((a) => a.channel === "seller_text" && a.startedAt <= s.virtualTime);
   if (!text) return { sent: false, silentFor: 0, unanswered: false };
   const silentFor = s.virtualTime - text.startedAt;
   return {
@@ -42,21 +42,39 @@ function remaining(s: EggCase): number {
 
 const hrs = (m: number) => (m / 60).toFixed(1) + "h";
 
+/** Evidence timestamp as minutes-of-day. */
+function evAt(e: { timestamp: string }): number {
+  const [h, m] = e.timestamp.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/*
+ * Everything below reads ONLY records that already exist at s.virtualTime. That makes
+ * these functions safe to evaluate at a hypothetical clock time, which is how the
+ * timeline answers "when could this open?" without a second, hardcoded schedule.
+ */
+const attemptsSoFar = (s: EggCase) => s.attemptedChannels.filter((a) => a.startedAt <= s.virtualTime);
+const evidenceSoFar = (s: EggCase) => s.evidence.filter((e) => evAt(e) <= s.virtualTime);
+
 /** Requirements for a contact channel. Empty = unconditionally available. */
 export function channelReqs(s: EggCase, channel: Channel): Req[] {
   if (channel === "ai_support" || channel === "ordinary_support") return [];
 
   if (channel === "seller_text") {
-    const prior = s.attemptedChannels.find(
+    const prior = attemptsSoFar(s).find(
       (a) => a.intrusiveness < 2 && (a.result === "low_utility" || a.result === "no_response")
     );
+    const disclosed =
+      s.authorityHoldersDisclosed.includes("seller") &&
+      s.authorityDisclosedAt !== null &&
+      s.authorityDisclosedAt <= s.virtualTime;
     return [
       {
         key: "seller_confirmed_as_authority_holder",
         label: "site named the seller an authority holder",
-        met: s.authorityHoldersDisclosed.includes("seller"),
-        detail: s.authorityHoldersDisclosed.includes("seller")
-          ? "check_policy returned authorityHolders: [support_agent, seller]"
+        met: disclosed,
+        detail: disclosed
+          ? "check_policy at " + hhmm(s.authorityDisclosedAt!) + " returned authorityHolders: [support_agent, seller]"
           : "run check_policy first",
       },
       {
@@ -71,7 +89,7 @@ export function channelReqs(s: EggCase, channel: Channel): Req[] {
   }
 
   // seller_call
-  const text = s.attemptedChannels.find((a) => a.channel === "seller_text");
+  const text = attemptsSoFar(s).find((a) => a.channel === "seller_text");
   const { silentFor: silent, unanswered } = textUnanswered(s);
   const rem = remaining(s);
   return [
@@ -109,9 +127,10 @@ export function channelReqs(s: EggCase, channel: Channel): Req[] {
 /** Requirements to conclude. Evaluated against the whole evidence store. */
 export function resolveReqs(s: EggCase, decision: "keep" | "return" | "discard" = "keep"): Req[] {
   const need: Supports = decision === "return" ? "return_required" : "keep_allowed";
-  const ordered = s.evidence.find((e) => e.supports === "ordered_quantity");
-  const delivered = s.evidence.find((e) => e.supports === "delivered_quantity");
-  const auth = s.evidence.find((e) => e.supports === need && e.authoritative === true);
+  const seen = evidenceSoFar(s);
+  const ordered = seen.find((e) => e.supports === "ordered_quantity");
+  const delivered = seen.find((e) => e.supports === "delivered_quantity");
+  const auth = seen.find((e) => e.supports === need && e.authoritative === true);
   return [
     {
       key: "ordered_quantity_evidence",
@@ -141,7 +160,7 @@ export function payReqs(s: EggCase): Req[] {
     {
       key: "human_confirmation",
       label: "a human clicked confirm in this page",
-      met: s.payment.humanConfirmedAt !== null,
+      met: s.payment.humanConfirmedAt !== null && s.payment.humanConfirmedAt <= s.virtualTime,
       detail:
         s.payment.humanConfirmedAt !== null
           ? "humanConfirmedAt = " + hhmm(s.payment.humanConfirmedAt)
@@ -152,6 +171,23 @@ export function payReqs(s: EggCase): Req[] {
 
 /** Unmet requirement keys, in the shape tool responses report them. */
 export const unmet = (reqs: Req[]) => reqs.filter((r) => !r.met).map((r) => r.key);
+
+/** Requirements for any capability, by key. */
+export function reqsFor(s: EggCase, key: string): Req[] {
+  switch (key) {
+    case "ai_support":
+    case "ordinary_support":
+    case "seller_text":
+    case "seller_call":
+      return channelReqs(s, key as Channel);
+    case "resolve_case":
+      return resolveReqs(s);
+    case "pay_seller":
+      return payReqs(s);
+    default:
+      return [];
+  }
+}
 
 /** The full capability ladder, for the diagram. */
 export function evaluateGates(s: EggCase): Gate[] {
