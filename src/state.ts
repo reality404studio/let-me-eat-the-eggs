@@ -50,6 +50,7 @@ export type Card = {
     | "blocked"
     | "escalation"
     | "call"
+    | "photo"
     | "resolved";
   title: string;
   status?: "ok" | "blocked" | "info";
@@ -90,6 +91,8 @@ export type EggCase = {
   left: LeftMsg[];
   finale: boolean;
   demoRunning: boolean;
+  /** "start" = the shared opening frame, before either side has moved. */
+  phase: "start" | "running";
 };
 
 export const START = 8 * 60; // 08:00
@@ -125,6 +128,7 @@ export function initialCase(): EggCase {
     left: [],
     finale: false,
     demoRunning: false,
+    phase: "start",
   };
 }
 

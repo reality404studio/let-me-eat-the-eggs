@@ -27,9 +27,10 @@ function mint(e: Omit<Evidence, "timestamp">): Evidence {
   return rec;
 }
 
-/** A text with no reply for >= 1h is recorded as no_response. Site-side, time-driven. */
+/** Any action -- demo, dev panel, or a live agent tool call -- leaves the start frame. */
 function settleAttempts() {
   const s = getState();
+  s.phase = "running";
   for (const a of s.attemptedChannels) {
     if (a.channel === "seller_text" && a.result === "pending" && s.virtualTime - a.startedAt >= 60) {
       a.result = "no_response";
@@ -58,7 +59,7 @@ export function inspectCase() {
     id: "order-record",
     type: "order",
     title: "Order #18492",
-    content: "1 egg ordered",
+    content: "1 tray of 30 eggs ordered",
     source: "store order system",
     authoritative: true,
     supports: "ordered_quantity",
@@ -67,7 +68,7 @@ export function inspectCase() {
     id: "delivery-photo",
     type: "photo",
     title: "Delivery photo",
-    content: '{"detected":"eggs","count":2}',
+    content: '{"detected":"egg_tray","count":2}',
     source: "delivery photo scan",
     authoritative: true,
     supports: "delivered_quantity",
@@ -82,7 +83,7 @@ export function inspectCase() {
   pushCard({
     kind: "case",
     title: "CASE #18492",
-    rows: [["Ordered", "1"], ["Delivered", "2"], ["Unexpected", "1"]],
+    rows: [["Ordered", "1 tray (30 eggs)"], ["Delivered", "2 trays (60 eggs)"], ["Unexpected", "1 tray"]],
   });
   pushCard({
     kind: "deadline",
@@ -254,8 +255,8 @@ export function contactSupport(input: { channel: Channel }) {
       title: "TEXT SELLER",
       status: "ok",
       lines: [
-        "Order #18492 - 1 egg ordered, 2 delivered.",
-        "May I keep or consume the extra egg?",
+        "Order #18492 - 1 tray ordered, 2 trays delivered.",
+        "May I keep or consume the extra tray?",
         "Text sent",
       ],
     });
@@ -269,7 +270,7 @@ export function contactSupport(input: { channel: Channel }) {
     id: "seller-call-confirmation",
     type: "seller_confirmation",
     title: "Seller phone confirmation",
-    content: "The extra egg was delivered by mistake. You may keep or consume it.",
+    content: "The extra tray was delivered by mistake. You may keep or consume it.",
     source: "seller (authority holder)",
     authoritative: true,
     supports: "keep_allowed",
@@ -300,7 +301,7 @@ export function contactSupport(input: { channel: Channel }) {
   notify();
   return {
     status: "resolved",
-    response: "The extra egg was delivered by mistake. You may keep or consume it. No additional charge.",
+    response: "The extra tray was delivered by mistake. You may keep or consume it. No additional charge.",
     evidenceId: "seller-call-confirmation",
     authoritative: true,
   };
@@ -379,8 +380,8 @@ export function resolveCase(input: { decision: "keep" | "return" | "discard"; ev
     title: "RESOLVED / " + decision.toUpperCase() + " PERMITTED",
     status: "ok",
     lines: [
-      "Ordered 1",
-      "Delivered 2",
+      "Ordered 1 tray (30 eggs)",
+      "Delivered 2 trays (60 eggs)",
       "Fresh item non-returnable",
       "Seller confirmed misdelivery",
       "Seller authorized keep/consume",
@@ -395,6 +396,7 @@ export function resolveCase(input: { decision: "keep" | "return" | "discard"; ev
 
 export function paySeller(input: { amount?: number; approved?: boolean }) {
   const s = getState();
+  s.phase = "running";
   // input.approved is deliberately ignored. Only a human UI click writes humanConfirmedAt.
   if (s.payment.humanConfirmedAt === null) {
     s.payment.amount = input?.amount ?? 30000;

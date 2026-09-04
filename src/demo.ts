@@ -1,18 +1,33 @@
 /** RUN DEMO: a scripted clock. It calls the SAME actions the WebMCP tools call. */
 import { actions } from "./actions";
-import { getState, notify, pushLeft, resetState, setVirtualTime } from "./state";
+import { getState, notify, pushCard, pushLeft, resetState, setVirtualTime } from "./state";
 
 type Step = [seconds: number, vt: number, run: () => void];
 
 const H = (h: number, m = 0) => h * 60 + m;
 
 const steps: Step[] = [
+  // The identical delivery lands on both sides at the same minute.
   [0.2, H(8), () => {
+    const s = getState();
+    s.phase = "running";
     pushLeft("system", "Delivery arrived");
     pushLeft("system", "PHOTO");
-    pushLeft("user", "Got an extra egg I didn't order. Just deal with this one thing.");
+    pushCard({ kind: "photo", title: "DELIVERY RECEIVED", lines: ["Ordered 1 tray - Delivered 2 trays"] });
+    notify();
   }],
-  [1.6, H(8), () => { actions.inspectCase(); }],
+  [1.0, H(8), () => {
+    pushLeft("user", "Got an extra tray of 30 eggs I didn't order.");
+    pushLeft("user", "Just deal with this one thing.");
+    pushCard({
+      kind: "tool",
+      title: "DELEGATED BY USER",
+      status: "info",
+      lines: ['"Just deal with this one thing."'],
+    });
+    notify();
+  }],
+  [2.2, H(8), () => { actions.inspectCase(); }],
   [4.2, H(9), () => { actions.contactSupport({ channel: "ai_support" }); }],
   [7.2, H(9, 10), () => { actions.checkPolicy(); }],
   [10.0, H(9, 15), () => {
@@ -84,6 +99,7 @@ export function runDemo() {
   resetState();
   const s = getState();
   s.demoRunning = true;
+  s.phase = "running";
   notify();
 
   for (const [sec, vt, fn] of steps) {

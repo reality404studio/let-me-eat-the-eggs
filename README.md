@@ -9,7 +9,7 @@ A WebMCP demo where the **site**, not the model, owns the guardrail.
 
 ## The problem
 
-Grocery delivery platforms carry contradictory policies: *misdelivered items must be returned*, and *fresh food cannot be returned*. Humans paper over this with heuristics and agent discretion. An agent has no such heuristics, so it either (a) reinterprets the contradiction on its own, or (b) stalls and does nothing.
+One tray of 30 eggs was ordered. Two trays arrived. Grocery delivery platforms carry contradictory policies: *misdelivered items must be returned*, and *fresh food cannot be returned*. Humans paper over this with heuristics and agent discretion. An agent has no such heuristics, so it either (a) reinterprets the contradiction on its own, or (b) stalls and does nothing.
 
 This project demonstrates a third route: **the agent recognizes it has no authority to interpret the contradiction, and works to reach whoever does.** As the deadline closes in, it does not expand its own authority — it shortens the distance to the authority holder.
 
@@ -63,6 +63,8 @@ Try asking it to conclude immediately — the site will block it.
 The virtual clock advances on its own (1 virtual hour per 4 real seconds) once a case is open, so the time-gated escalations are reachable in a live session.
 
 ## Screen
+
+The app opens on a **start state**: the same delivery photo, the same 08:00, handed to both sides at once — the human on the left, the agent on the right — so the split that follows reads as two routes out of one situation rather than two unrelated stories.
 
 Single split screen. LEFT is the human working the same problem through a support chat, fragmented by lunch, a work call, and support hours. RIGHT is the agent, driven entirely by tool-call results. The shared virtual clock is at the top. The human ends the day unresolved; the agent resolves at 16:30.
 

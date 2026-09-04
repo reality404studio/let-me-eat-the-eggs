@@ -49,6 +49,19 @@ function CardView({ c }: { c: Card }) {
     );
   }
 
+  if (c.kind === "photo") {
+    return (
+      <div className="card photo-card">
+        <div className="card-head">
+          <span className="card-title">{c.title}</span>
+          <span className="card-time">{hhmm(c.at)}</span>
+        </div>
+        <img className="shot" src="/delivery.jpg" alt="Two egg trays delivered" />
+        <div className="shot-meta">{c.lines?.[0]}</div>
+      </div>
+    );
+  }
+
   if (c.kind === "conflict") {
     return (
       <div className="card conflict">
@@ -104,8 +117,8 @@ function LeftMsgView({ m }: { m: LeftMsg }) {
   if (m.text === "PHOTO") {
     return (
       <div className="photo">
-        <div className="eggs">🥚🥚</div>
-        <div className="photo-meta">Ordered: 1 &nbsp; Delivered: 2</div>
+        <img className="shot" src="/delivery.jpg" alt="Two egg trays delivered" />
+        <div className="photo-meta">Ordered: 1 tray &nbsp;·&nbsp; Delivered: 2 trays</div>
       </div>
     );
   }
@@ -200,6 +213,51 @@ export default function App() {
           resolve_case(keep)
         </button>
       </footer>
+
+      {s.phase === "start" && (
+        <div className="startstate">
+          <div className="ss-head">
+            <div className="ss-kicker">08:00 — THE SAME DELIVERY, THE SAME MINUTE</div>
+            <img className="ss-shot" src="/delivery.jpg" alt="Two egg trays delivered" />
+            <div className="ss-facts">
+              <div><span>Ordered</span><b>1 tray · 30 eggs</b></div>
+              <div><span>Delivered</span><b>2 trays · 60 eggs</b></div>
+              <div><span>Item</span><b>Fresh · non-returnable</b></div>
+            </div>
+          </div>
+
+          <div className="ss-split">
+            <div className="ss-col human">
+              <div className="ss-role">HUMAN</div>
+              <div className="ss-move">Opens the support chat between other things.</div>
+              <ul className="ss-list">
+                <li>has 24 hours, but not 24 continuous hours</li>
+                <li>lunch ends, a work call comes in, support closes at 18:00</li>
+                <li>every restart begins from "your order number, please?"</li>
+              </ul>
+              <div className="ss-out bad">ends the day UNRESOLVED</div>
+            </div>
+
+            <div className="ss-col agent">
+              <div className="ss-role">AGENT</div>
+              <div className="ss-move">"Just deal with this one thing."</div>
+              <ul className="ss-list">
+                <li>narrows its own deadline to 18:00</li>
+                <li>hits a policy contradiction it has no authority to interpret</li>
+                <li>waits, then shortens the distance to whoever does</li>
+              </ul>
+              <div className="ss-out good">RESOLVED by 16:30</div>
+            </div>
+          </div>
+
+          <div className="ss-foot">
+            <button className="ss-go" onClick={runDemo}>RUN DEMO</button>
+            <span className="ss-hint">
+              or call a tool from an agent — the same state machine, entered from the same frame
+            </span>
+          </div>
+        </div>
+      )}
 
       {s.finale && (
         <div className="finale">
