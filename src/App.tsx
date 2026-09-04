@@ -3,6 +3,7 @@ import { getState, getVersion, subscribe, hhmm, type Card, type LeftMsg } from "
 import { actions, remainingMinutes } from "./actions";
 import { registerWebMCPTools } from "./webmcp";
 import { runDemo, resetDemo, startAmbientClock } from "./demo";
+import GatePanel from "./GatePanel";
 
 function useAutoScroll(dep: unknown) {
   const ref = useRef<HTMLDivElement>(null);
@@ -177,6 +178,7 @@ export default function App() {
 
         <section className="side right">
           <div className="side-label">AGENT</div>
+          <div className="right-row">
           <div className="phone">
             <div className={"agent-badge " + badge.cls}>
               <span>{badge.label}</span>
@@ -190,6 +192,8 @@ export default function App() {
               {s.cards.map((c) => <CardView key={c.id} c={c} />)}
               {s.cards.length === 0 && <div className="empty">No tool calls yet.</div>}
             </div>
+          </div>
+          <GatePanel s={s} />
           </div>
         </section>
       </main>

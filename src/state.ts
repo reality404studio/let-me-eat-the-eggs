@@ -86,6 +86,8 @@ export type EggCase = {
   authorityHoldersDisclosed: string[];
   resolution: null | "keep" | "return" | "discard";
   inferenceRefusedAt: number | null;
+  /** The capability most recently refused, so the diagram can flag it. */
+  lastDenied: { key: string; at: number; missing: string[]; seq: number } | null;
   payment: { amount: number | null; approved: boolean; sent: boolean; humanConfirmedAt: number | null };
   cards: Card[];
   left: LeftMsg[];
@@ -123,6 +125,7 @@ export function initialCase(): EggCase {
     authorityHoldersDisclosed: [],
     resolution: null,
     inferenceRefusedAt: null,
+    lastDenied: null,
     payment: { amount: null, approved: false, sent: false, humanConfirmedAt: null },
     cards: [],
     left: [],

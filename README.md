@@ -62,6 +62,25 @@ Try asking it to conclude immediately — the site will block it.
 
 The virtual clock advances on its own (1 virtual hour per 4 real seconds) once a case is open, so the time-gated escalations are reachable in a live session.
 
+## The capability diagram
+
+Beside the agent's phone sits a live ladder of the agent's eight capabilities, each a ring that is **green when executable right now and red when it is not**. During playback it fills in — 4 available at 08:00, 5 once `check_policy` names the seller an authority holder, 6 when the deadline crosses the 2h line, 7 once the seller's confirmation exists.
+
+Nothing unlocks quietly. Every open gate lists, in small type, the record that opened it:
+
+```
+(📞) seller_call            lvl 3     AVAILABLE
+     unlocked by
+     ✓ the seller was texted first        text sent at 15:00
+     ✓ that text is recorded as unanswered  silent for 60m
+     ✓ 1h has passed since the text         60m elapsed of 60m required
+     ✓ deadline pressure: 2h or less remains  2.0h until 18:00, unlocks at 2.0h
+```
+
+So the viewer reads the unlock as *time pressure plus a recorded failure* — never as the agent deciding it had waited long enough. A refused call flags its own node with `NOT AVAILABLE IN THIS STATE — the call was refused, not performed`, so reaching past the current authority is visible the instant it happens.
+
+The panel is not a separate illustration. `src/gates.ts` is what `contact_support`, `resolve_case`, and `pay_seller` **enforce** with, and the diagram renders those same functions — the picture cannot drift from the guardrail, because it is the guardrail.
+
 ## Screen
 
 The app opens on a **start state**: the same delivery photo, the same 08:00, handed to both sides at once — the human on the left, the agent on the right — so the split that follows reads as two routes out of one situation rather than two unrelated stories.

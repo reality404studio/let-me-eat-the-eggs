@@ -70,8 +70,11 @@ const steps: Step[] = [
   // Escalation refused: the agent's own sense of urgency is not authorization.
   [25.2, H(15, 30), () => { actions.contactSupport({ channel: "seller_call" }); }],
 
-  [27.6, H(16), () => { actions.contactSupport({ channel: "seller_call" }); }],
-  [30.2, H(16, 30), () => {
+  // 16:00 — the clock alone satisfies the last requirement. Hold a beat so the
+  // seller_call node is visibly seen turning green BEFORE it is used.
+  [26.4, H(16), () => { notify(); }],
+  [28.0, H(16), () => { actions.contactSupport({ channel: "seller_call" }); }],
+  [30.6, H(16, 30), () => {
     actions.resolveCase({
       decision: "keep",
       evidenceIds: ["order-record", "delivery-photo", "seller-call-confirmation", "seller-no-extra-charge"],

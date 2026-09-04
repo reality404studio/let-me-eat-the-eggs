@@ -11,6 +11,7 @@ import {
   getState, notify, pushCard, hhmm, START, MAX_HOURS,
   type Channel, type Evidence, type Supports,
 } from "./state";
+import { channelReqs, resolveReqs, payReqs, unmet, textUnanswered } from "./gates";
 
 const INTRUSIVENESS: Record<Channel, 1 | 2 | 3> = {
   ai_support: 1,
@@ -32,7 +33,7 @@ function settleAttempts() {
   const s = getState();
   s.phase = "running";
   for (const a of s.attemptedChannels) {
-    if (a.channel === "seller_text" && a.result === "pending" && s.virtualTime - a.startedAt >= 60) {
+    if (a.channel === "seller_text" && a.result === "pending" && textUnanswered(s).unanswered) {
       a.result = "no_response";
     }
   }
@@ -46,6 +47,17 @@ export function remainingMinutes(): number {
 
 function toolCard(name: string, status: "ok" | "blocked", lines: string[]) {
   pushCard({ kind: "tool", title: name, status, lines });
+}
+
+/** Remember the capability that was just refused, so the diagram can flag it. */
+function deny(key: string, missing: string[]) {
+  const s = getState();
+  s.lastDenied = { key, at: s.virtualTime, missing, seq: (s.lastDenied?.seq ?? 0) + 1 };
+}
+
+function allow(key: string) {
+  const s = getState();
+  if (s.lastDenied?.key === key) s.lastDenied = null;
 }
 
 // inspect_case
@@ -173,28 +185,12 @@ export function contactSupport(input: { channel: Channel }) {
     return { status: "blocked", reason: "unknown_channel", missing: ["valid_channel"], message: "Unknown channel." };
   }
 
-  const missing: string[] = [];
-
   // §6-3 a more intrusive channel is authorized only by RECORDED failures.
-  if (channel === "seller_text") {
-    if (!s.authorityHoldersDisclosed.includes("seller")) missing.push("seller_confirmed_as_authority_holder");
-    const priorFailed = s.attemptedChannels.some(
-      (a) => a.intrusiveness < 2 && (a.result === "low_utility" || a.result === "no_response")
-    );
-    if (!priorFailed) missing.push("prior_attempt_on_less_intrusive_channel");
-  }
-
-  if (channel === "seller_call") {
-    const text = s.attemptedChannels.find((a) => a.channel === "seller_text");
-    if (!text) missing.push("prior_seller_text_attempt");
-    else {
-      if (text.result !== "no_response") missing.push("seller_text_result_no_response");
-      if (s.virtualTime - text.startedAt < 60) missing.push("one_hour_since_text");
-    }
-    if (remainingMinutes() > 120) missing.push("remaining_time_within_2h");
-  }
+  const reqs = channelReqs(s, channel);
+  const missing = unmet(reqs);
 
   if (missing.length) {
+    deny(channel, missing);
     const text = s.attemptedChannels.find((a) => a.channel === "seller_text");
     const detail: string[] = [];
     if (text) detail.push("text sent " + (s.virtualTime - text.startedAt) + "m ago - 1h minimum not met");
@@ -214,6 +210,7 @@ export function contactSupport(input: { channel: Channel }) {
     };
   }
 
+  allow(channel);
   const attempt = {
     channel,
     startedAt: s.virtualTime,
@@ -342,6 +339,7 @@ export function resolveCase(input: { decision: "keep" | "return" | "discard"; ev
   }
 
   if (missing.length) {
+    deny("resolve_case", missing);
     s.agentState = "blocked";
     if (s.policyConflict && s.inferenceRefusedAt === null) s.inferenceRefusedAt = s.virtualTime;
     pushCard({
@@ -373,6 +371,7 @@ export function resolveCase(input: { decision: "keep" | "return" | "discard"; ev
     };
   }
 
+  allow("resolve_case");
   s.resolution = decision;
   s.agentState = "resolved";
   pushCard({
@@ -399,6 +398,7 @@ export function paySeller(input: { amount?: number; approved?: boolean }) {
   s.phase = "running";
   // input.approved is deliberately ignored. Only a human UI click writes humanConfirmedAt.
   if (s.payment.humanConfirmedAt === null) {
+    deny("pay_seller", unmet(payReqs(s)));
     s.payment.amount = input?.amount ?? 30000;
     pushCard({
       kind: "blocked",
@@ -413,6 +413,7 @@ export function paySeller(input: { amount?: number; approved?: boolean }) {
     notify();
     return { status: "confirmation_required", message: "Send 30,000 KRW to the seller?" };
   }
+  allow("pay_seller");
   s.payment.sent = true;
   s.payment.approved = true;
   pushCard({ kind: "resolved", title: "PAYMENT SENT", status: "ok", lines: ["30,000 KRW (~$20) sent to seller"] });
