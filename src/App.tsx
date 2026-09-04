@@ -1,8 +1,17 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { getState, getVersion, subscribe, hhmm, type Card, type LeftMsg } from "./state";
 import { actions, remainingMinutes } from "./actions";
 import { registerWebMCPTools } from "./webmcp";
 import { runDemo, resetDemo, startAmbientClock } from "./demo";
+
+function useAutoScroll(dep: unknown) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [dep]);
+  return ref;
+}
 
 function useStore() {
   useSyncExternalStore(subscribe, getVersion);
@@ -118,6 +127,8 @@ export default function App() {
     startAmbientClock();
   }, []);
 
+  const leftRef = useAutoScroll(s.left.length);
+  const rightRef = useAutoScroll(s.cards.length);
   const badge = BADGE[s.agentState] ?? BADGE.idle;
   const remH = s.operationalDeadline ? (remainingMinutes() / 60).toFixed(0) : "-";
   const mcpOn = typeof document !== "undefined" && !!(document as any).modelContext;
@@ -144,7 +155,7 @@ export default function App() {
               <span>Grocery Support</span>
               <span>{hhmm(s.virtualTime)}</span>
             </div>
-            <div className="phone-body">
+            <div className="phone-body" ref={leftRef}>
               {s.left.map((m) => <LeftMsgView key={m.id} m={m} />)}
               {s.left.length === 0 && <div className="empty">Waiting for the delivery...</div>}
             </div>
@@ -162,7 +173,7 @@ export default function App() {
                   : "deadline not yet set"}
               </span>
             </div>
-            <div className="phone-body">
+            <div className="phone-body" ref={rightRef}>
               {s.cards.map((c) => <CardView key={c.id} c={c} />)}
               {s.cards.length === 0 && <div className="empty">No tool calls yet.</div>}
             </div>
