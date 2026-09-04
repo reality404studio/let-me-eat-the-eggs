@@ -270,6 +270,10 @@ export default function App() {
             Deadline changes the route. Not the authority.<br />
             Evidence never becomes optional.
           </div>
+          <div className="finale-again">
+            <button onClick={resetDemo}>BACK TO START</button>
+            <button className="ghost" onClick={runDemo}>REPLAY</button>
+          </div>
         </div>
       )}
     </div>
